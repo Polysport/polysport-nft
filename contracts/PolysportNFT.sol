@@ -16,49 +16,52 @@ import {IPolysportNFT} from "./interfaces/IPolysportNFT.sol";
 contract PolysportNFT is Ownable, ReentrancyGuard, IPolysportNFT, ERC165, ERC721, ERC721Enumerable {
     using Strings for uint256;
 
-    event NFTMinted(address indexed purchaser, uint256 indexed id);
+    event NFTMinted(address indexed purchaser, uint256 indexed id, uint256 indexed grade);
+    event NFTBurned(address indexed owner, uint256 indexed id);
 
     uint256 public tokenIdCounter;
     string public baseUri;
-    uint256 public cost;
-    uint256 public nativeCost;
+    mapping(uint256 => uint256) public cost;
+    mapping(uint256 => uint256) public nativeCost;
     address payable public saleWallet;
     address public paymentToken;
 
-    constructor(string memory _baseUri, uint256 _cost, uint256 _nativeCost, address payable _saleWallet, address _paymentToken) Ownable(msg.sender) ERC721("Polysport", "POLY") {
+    constructor(string memory _baseUri, uint256 _grades, uint256[] memory _cost, uint256[] memory _nativeCost, address payable _saleWallet, address _paymentToken) Ownable(msg.sender) ERC721("Polysport", "POLY") {
         baseUri = _baseUri;
-        cost = _cost;
-        nativeCost = _nativeCost;
+        for (uint256 i = 0; i < _grades; i++) {
+            cost[i] = _cost[i];
+            nativeCost[i] = _nativeCost[i];
+        }
         saleWallet = _saleWallet;
         paymentToken = _paymentToken;
     }
 
-    function mint(uint256 _mintAmount) public {
+    function mint(uint256 _mintAmount, uint256 _grade) public {
         require(_mintAmount > 0);
-        require(cost > 0, "Not for sale with payment token");
-        uint256 totalCost = cost *_mintAmount;
+        require(cost[_grade] > 0, "Not for sale with payment token at this grade");
+        uint256 totalCost = cost[_grade] * _mintAmount;
         for (uint256 i = 0; i < _mintAmount; i++) {
-            safeMint(msg.sender);
+            safeMint(msg.sender, _grade);
         }
         forwardFunds(totalCost);
     }
 
-    function mintWithNative(uint256 _mintAmount) public payable {
+    function mintWithNative(uint256 _mintAmount, uint256 _grade) public payable {
         require(_mintAmount > 0);
-        require(nativeCost > 0, "Not for sale with native token");
-        uint256 totalCost = nativeCost * _mintAmount;
+        require(nativeCost[_grade] > 0, "Not for sale with native token at this grade");
+        uint256 totalCost = nativeCost[_grade] * _mintAmount;
         require(msg.value >= totalCost);
         for (uint256 i = 0; i < _mintAmount; i++) {
-            safeMint(msg.sender);
+            safeMint(msg.sender, _grade);
         }
         forwardNativeFunds(totalCost);
     }
 
-    function safeMint(address recipient) internal nonReentrant {
+    function safeMint(address recipient, uint256 grade) internal nonReentrant {
         uint256 tokenId = tokenIdCounter;
         tokenIdCounter = tokenIdCounter + 1;
         _safeMint(recipient, tokenId);
-        emit NFTMinted(recipient, tokenId);
+        emit NFTMinted(recipient, tokenId, grade);
     }
 
     function burn(uint256 tokenId) public override {
@@ -83,12 +86,12 @@ contract PolysportNFT is Ownable, ReentrancyGuard, IPolysportNFT, ERC165, ERC721
         baseUri = _baseUri;
     }
 
-    function setCost(uint256 _cost) public onlyOwner {
-        cost = _cost;
+    function setCost(uint256 _grade, uint256 _cost) public onlyOwner {
+        cost[_grade] = _cost;
     }
 
-    function setNativeCost(uint256 _nativeCost) public onlyOwner {
-        nativeCost = _nativeCost;
+    function setNativeCost(uint256 _grade, uint256 _nativeCost) public onlyOwner {
+        nativeCost[_grade] = _nativeCost;
     }
 
     function setSaleWallet(address payable _saleWallet) public onlyOwner {

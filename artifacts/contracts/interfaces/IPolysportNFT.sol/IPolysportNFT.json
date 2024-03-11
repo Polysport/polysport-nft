@@ -22,6 +22,11 @@
           "internalType": "uint256",
           "name": "_mintAmount",
           "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_grade",
+          "type": "uint256"
         }
       ],
       "name": "mint",
@@ -34,6 +39,11 @@
         {
           "internalType": "uint256",
           "name": "_mintAmount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_grade",
           "type": "uint256"
         }
       ],
