@@ -66,7 +66,9 @@ contract PolysportNFT is Ownable, ReentrancyGuard, IPolysportNFT, ERC165, ERC721
 
     function burn(uint256 tokenId) public override {
         require(_ownerOf(tokenId) == msg.sender || _getApproved(tokenId) == msg.sender);
+        address owner = _ownerOf(tokenId);
         _burn(tokenId);
+        emit NFTBurned(owner, tokenId);
     }
 
     function forwardFunds(uint256 weiAmount) internal {
