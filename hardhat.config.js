@@ -23,8 +23,8 @@ module.exports = {
       accounts: ['']
     },
     mainnet: {
-      url: 'https://mainnet.infura.io/v3/3fe30baf2d1845989b724e661af9af51',
-      chainId: 1,
+      url: 'https://polygon-rpc.com/',
+      chainId: 137,
       accounts: ['']
     },
   },

@@ -24,15 +24,17 @@ contract PolysportNFT is Ownable, ReentrancyGuard, IPolysportNFT, ERC165, ERC721
     mapping(uint256 => uint256) public cost;
     mapping(uint256 => uint256) public nativeCost;
     address payable public saleWallet;
+    address payable public escrowWallet;
     address public paymentToken;
 
-    constructor(string memory _baseUri, uint256 _grades, uint256[] memory _cost, uint256[] memory _nativeCost, address payable _saleWallet, address _paymentToken) Ownable(msg.sender) ERC721("Polysport", "POLY") {
+    constructor(string memory _baseUri, uint256 _grades, uint256[] memory _cost, uint256[] memory _nativeCost, address payable _saleWallet, address payable _escrowWallet, address _paymentToken) Ownable(msg.sender) ERC721("Polysport", "POLY") {
         baseUri = _baseUri;
         for (uint256 i = 0; i < _grades; i++) {
             cost[i] = _cost[i];
             nativeCost[i] = _nativeCost[i];
         }
         saleWallet = _saleWallet;
+        escrowWallet = _escrowWallet;
         paymentToken = _paymentToken;
     }
 
@@ -43,7 +45,8 @@ contract PolysportNFT is Ownable, ReentrancyGuard, IPolysportNFT, ERC165, ERC721
         for (uint256 i = 0; i < _mintAmount; i++) {
             safeMint(msg.sender, _grade);
         }
-        forwardFunds(totalCost);
+        forwardFunds((totalCost / 5) * 4, escrowWallet);
+        forwardFunds(totalCost / 5, saleWallet);
     }
 
     function mintWithNative(uint256 _mintAmount, uint256 _grade) public payable {
@@ -54,7 +57,8 @@ contract PolysportNFT is Ownable, ReentrancyGuard, IPolysportNFT, ERC165, ERC721
         for (uint256 i = 0; i < _mintAmount; i++) {
             safeMint(msg.sender, _grade);
         }
-        forwardNativeFunds(totalCost);
+        forwardNativeFunds((totalCost / 5) * 4, escrowWallet);
+        forwardNativeFunds(totalCost / 5, saleWallet);
     }
 
     function safeMint(address recipient, uint256 grade) internal nonReentrant {
@@ -71,12 +75,12 @@ contract PolysportNFT is Ownable, ReentrancyGuard, IPolysportNFT, ERC165, ERC721
         emit NFTBurned(owner, tokenId);
     }
 
-    function forwardFunds(uint256 weiAmount) internal {
-        IERC20(paymentToken).transferFrom(msg.sender, saleWallet, weiAmount);
+    function forwardFunds(uint256 weiAmount, address to) internal {
+        IERC20(paymentToken).transferFrom(msg.sender, to, weiAmount);
     }
 
-    function forwardNativeFunds(uint256 weiAmount) internal {
-        saleWallet.transfer(weiAmount);
+    function forwardNativeFunds(uint256 weiAmount, address payable to) internal {
+        to.transfer(weiAmount);
     }
 
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
